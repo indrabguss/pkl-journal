@@ -323,7 +323,7 @@ export default function RegisterForm() {
             htmlFor="email"
             className="block text-sm font-medium text-[#dfe1f5]"
           >
-            Email Sekolah / Kampus
+            Email
           </label>
 
           <InputWrapper icon={<MailIcon />}>
@@ -334,7 +334,7 @@ export default function RegisterForm() {
               autoComplete="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="1234567890@pnb.ac.id"
+              placeholder="Masukan Email"
               required
               disabled={isSubmitting}
               className="w-full rounded-full border-0 bg-[#1b1f2d] py-3 pl-12 pr-4 text-sm text-[#dfe1f5] outline-none transition placeholder:text-[#797980] focus:ring-2 focus:ring-[#adc6ff] disabled:cursor-not-allowed disabled:opacity-60"

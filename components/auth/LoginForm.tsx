@@ -236,7 +236,7 @@ export default function LoginForm() {
               name="email"
               type="email"
               autoComplete="email"
-              placeholder="1234567890@pnb.ac.id"
+              placeholder="Masukan Email"
               value={email}
               onChange={(event) => {
                 setEmail(
