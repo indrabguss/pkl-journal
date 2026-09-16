@@ -1,7 +1,14 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  FormEvent,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import { useRouter } from "next/navigation";
+
 import { createClient } from "@/lib/supabase/client";
 
 export default function ResetPasswordForm() {
@@ -12,17 +19,27 @@ export default function ResetPasswordForm() {
     []
   );
 
-  const [newPassword, setNewPassword] = useState("");
+  const [newPassword, setNewPassword] =
+    useState("");
+
   const [confirmPassword, setConfirmPassword] =
     useState("");
 
-  const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [email, setEmail] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
+
+  const [isLoading, setIsLoading] =
+    useState(true);
+
   const [isSubmitting, setIsSubmitting] =
     useState(false);
+
   const [isRecovery, setIsRecovery] =
     useState(false);
+
   const [isSuccess, setIsSuccess] =
     useState(false);
 
@@ -30,41 +47,89 @@ export default function ResetPasswordForm() {
     let mounted = true;
 
     async function initializeRecovery() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        /*
+         * Setelah /auth/callback berhasil,
+         * session recovery sudah disimpan
+         * oleh Supabase SSR.
+         */
+        const {
+          data: { session },
+        } =
+          await supabase.auth.getSession();
 
-      if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
-      if (session) {
-        setEmail(
-          session.user.email ?? ""
+        if (session) {
+          setEmail(
+            session.user.email ?? ""
+          );
+
+          setIsRecovery(true);
+        }
+
+        setIsLoading(false);
+      } catch (initializeError) {
+        console.error(
+          "Gagal memeriksa session recovery:",
+          initializeError
         );
-        setIsRecovery(true);
-      }
 
-      setIsLoading(false);
+        if (!mounted) {
+          return;
+        }
+
+        setError(
+          "Sesi reset password tidak dapat diperiksa."
+        );
+
+        setIsLoading(false);
+      }
     }
 
     initializeRecovery();
 
+    /*
+     * Tetap dengarkan perubahan auth.
+     *
+     * PASSWORD_RECOVERY biasanya muncul
+     * ketika client menerima session recovery.
+     */
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
-
-        if (
-          event === "PASSWORD_RECOVERY" ||
+    } =
+      supabase.auth.onAuthStateChange(
+        (
+          event,
           session
-        ) {
-          setEmail(
-            session?.user?.email ?? ""
+        ) => {
+          if (!mounted) {
+            return;
+          }
+
+          console.log(
+            "AUTH EVENT:",
+            event
           );
-          setIsRecovery(true);
+
+          if (
+            event ===
+              "PASSWORD_RECOVERY" ||
+            session
+          ) {
+            if (session) {
+              setEmail(
+                session.user.email ?? ""
+              );
+            }
+
+            setIsRecovery(true);
+            setError("");
+          }
         }
-      }
-    );
+      );
 
     return () => {
       mounted = false;
@@ -80,7 +145,9 @@ export default function ResetPasswordForm() {
     setError("");
 
     if (!newPassword) {
-      setError("Password baru wajib diisi.");
+      setError(
+        "Password baru wajib diisi."
+      );
       return;
     }
 
@@ -98,7 +165,10 @@ export default function ResetPasswordForm() {
       return;
     }
 
-    if (newPassword !== confirmPassword) {
+    if (
+      newPassword !==
+      confirmPassword
+    ) {
       setError(
         "Konfirmasi password tidak cocok."
       );
@@ -108,20 +178,29 @@ export default function ResetPasswordForm() {
     setIsSubmitting(true);
 
     try {
+      /*
+       * Pastikan session recovery
+       * masih tersedia sebelum update password.
+       */
       const {
         data: { session },
-      } = await supabase.auth.getSession();
+      } =
+        await supabase.auth.getSession();
 
       if (!session) {
         setError(
           "Sesi reset password tidak ditemukan atau sudah kedaluwarsa. Silakan minta link reset password baru."
         );
+
         return;
       }
 
-      const { error: updateError } =
+      const {
+        error: updateError,
+      } =
         await supabase.auth.updateUser({
-          password: newPassword,
+          password:
+            newPassword,
         });
 
       if (updateError) {
@@ -130,7 +209,10 @@ export default function ResetPasswordForm() {
           updateError.message
         );
 
-        setError(updateError.message);
+        setError(
+          updateError.message
+        );
+
         return;
       }
 
@@ -187,7 +269,9 @@ export default function ResetPasswordForm() {
 
         <button
           type="button"
-          onClick={() => router.push("/login")}
+          onClick={() =>
+            router.push("/login")
+          }
           className="w-full rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
           Kembali ke Login
@@ -219,7 +303,9 @@ export default function ResetPasswordForm() {
         <button
           type="button"
           onClick={() =>
-            router.push("/lupa-password")
+            router.push(
+              "/lupa-password"
+            )
           }
           className="w-full rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
@@ -330,11 +416,13 @@ export default function ResetPasswordForm() {
             <span className="material-symbols-outlined animate-spin text-[20px]">
               progress_activity
             </span>
+
             Menyimpan...
           </>
         ) : (
           <>
             Simpan Password Baru
+
             <span className="material-symbols-outlined text-[20px]">
               check
             </span>
