@@ -1,3 +1,4 @@
+import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
@@ -5,6 +6,8 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
 
   const code = url.searchParams.get("code");
+  const tokenHash = url.searchParams.get("token_hash");
+  const type = url.searchParams.get("type") as EmailOtpType | null;
   const requestedNext = url.searchParams.get("next") ?? "/dashboard";
 
   const next =
@@ -22,29 +25,53 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  if (!code) {
+  const supabase = await createClient();
+
+  // Flow OAuth / PKCE / recovery dengan authorization code
+  if (code) {
+    const { error } =
+      await supabase.auth.exchangeCodeForSession(code);
+
+    if (error) {
+      console.error(
+        "Gagal menukar auth code:",
+        error.message
+      );
+
+      return NextResponse.redirect(
+        new URL("/verifikasi-gagal", siteUrl)
+      );
+    }
+
     return NextResponse.redirect(
-      new URL("/verifikasi-gagal", siteUrl)
+      new URL(next, siteUrl)
     );
   }
 
-  const supabase = await createClient();
+  // Flow email OTP / token hash
+  if (tokenHash && type) {
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type,
+    });
 
-  const { error } =
-    await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      console.error(
+        "Gagal verifikasi OTP:",
+        error.message
+      );
 
-  if (error) {
-    console.error(
-      "Gagal menukar auth code:",
-      error.message
-    );
+      return NextResponse.redirect(
+        new URL("/verifikasi-gagal", siteUrl)
+      );
+    }
 
     return NextResponse.redirect(
-      new URL("/verifikasi-gagal", siteUrl)
+      new URL(next, siteUrl)
     );
   }
 
   return NextResponse.redirect(
-    new URL(next, siteUrl)
+    new URL("/verifikasi-gagal", siteUrl)
   );
 }
