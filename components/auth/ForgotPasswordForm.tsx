@@ -126,16 +126,33 @@ export default function ForgotPasswordForm() {
 
     try {
       /*
-       * Menggunakan origin saat ini.
+       * Redirect reset password selalu menggunakan
+       * NEXT_PUBLIC_SITE_URL agar tidak mengikuti
+       * origin dari Dev Tunnel atau localhost.
        *
-       * Saat testing lewat Dev Tunnel:
-       * https://vs46lcnn-3000.asse.devtunnels.ms
-       *
-       * maka redirect otomatis memakai
-       * URL tersebut.
+       * Production:
+       * https://ngussdev.my.id
        */
+      const configuredSiteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+      if (!configuredSiteUrl) {
+        setError(
+          "NEXT_PUBLIC_SITE_URL belum dikonfigurasi. Periksa environment variable."
+        );
+        return;
+      }
+
+      const siteUrl =
+        configuredSiteUrl.replace(/\/+$/, "");
+
       const redirectUrl =
-         `${window.location.origin}/reset-password`;
+        `${siteUrl}/auth/callback?next=/reset-password`;
+
+      console.log(
+        "Reset password redirect URL:",
+        redirectUrl
+      );
 
       const { error: resetError } =
         await supabase.auth.resetPasswordForEmail(
@@ -146,23 +163,31 @@ export default function ForgotPasswordForm() {
           }
         );
 
-    if (resetError) {
-        console.error("SUPABASE RESET ERROR RAW:", resetError);
+      if (resetError) {
+        console.error(
+          "SUPABASE RESET ERROR RAW:",
+          resetError
+        );
+
         console.error(
           "SUPABASE RESET ERROR MESSAGE:",
           String(resetError.message)
         );
+
         console.error(
           "SUPABASE RESET ERROR STATUS:",
           String(resetError.status)
         );
+
         console.error(
           "SUPABASE RESET ERROR NAME:",
           String(resetError.name)
         );
 
         setError(
-          `Gagal mengirim email: ${String(resetError.message)}`
+          `Gagal mengirim email: ${String(
+            resetError.message
+          )}`
         );
 
         return;
@@ -176,8 +201,7 @@ export default function ForgotPasswordForm() {
       );
 
       setError(
-        submitError instanceof
-          Error
+        submitError instanceof Error
           ? submitError.message
           : "Gagal mengirim link reset password."
       );
